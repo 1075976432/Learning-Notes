@@ -77,8 +77,8 @@ $e$：固定常数；防止$\delta$为0的样本永远不会被采样,对每个�
 $a$: 范围0到1的常数；防止样本过拟合，最终造成一直选取同样的高重要性样本；当a为0时,代表uniform sample; a为1时，代表只考虑priority sample 
 $N$: buffer size 
 $b$: 范围0到1的数；控制$w_i$的重要性，减少bias的程度。在经典的强化学习的场景下，更新的无偏性是训练最后接近收敛最重要的部分，因此当算法进行到后期收敛时，$w_i$变得越来越重要，所以$b$可以设置为从0到1不断变大。
-
-![avatar](./imgs/prioritized.png)
+方法：使用**Sum Tree**数据结构。代码参考[这里](https://github.com/rlcode/per)
+![avatar](./imgs/prioritized.png)。
 
 ## Dueling DQN  
 由于$V(S)$并不随着action有太大变化，所以直接求出时合理的。而action对state的影响不可忽视，则用优势函数(Advantage Function)表示。  
