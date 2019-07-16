@@ -49,7 +49,7 @@ TD Target由$R+\gamma max\hat q(S',a, w)$代替。由于其本身与需要学习
             * update:$\Delta w=\alpha (y_i - \hat q(s_i,a_i,w))\nabla_w \hat q(s_i,a_i,w)$
             * every C steps, soft update $w^- \leftarrow w$
 ## 改进
-### Double DQN
+#### Double DQN
 对于原始DQN，目标值为：
     $$y_i=r_i+\gamma max_a\hat q (s_{i+1},a,w)$$
 可写成：
@@ -61,7 +61,7 @@ TD Target由$R+\gamma max\hat q(S',a, w)$代替。由于其本身与需要学习
 对应到fixed target DQN：
  $$y_i=r_i+\gamma \hat q (s_{i+1},argmax_a \hat q(s_{i+1}, a, w),w^-)$$ 
 
-### Prioritized Experience Replay  
+#### Prioritized Experience Replay  
 对于在buffer中的experience，其重要程度是不一样的.为了可以使重要的经验有更高的几率被sample到，并避免其随着新样本的增加而丢失，可以使用prioritized experience replay. 
 首先可以利用TD Error
         $$\delta_t = R_{t+1} + \gamma max_{a\in a}\hat q(S_{t+1}, a, w) - \hat q (S_t, A_t, w)$$来表示重要性(priority): 
@@ -80,7 +80,7 @@ $b$: 范围0到1的数；控制$w_i$的重要性，减少bias的程度。在经�
 方法：使用**Sum Tree**数据结构。代码参考[这里](https://github.com/rlcode/per)
 ![avatar](./imgs/prioritized.png)。
 
-## Dueling DQN  
+### Dueling DQN  
 由于$V(S)$并不随着action有太大变化，所以直接求出时合理的。而action对state的影响不可忽视，则用优势函数(Advantage Function)表示。  
 
 Dueling DQN考虑将Q网络分成两部分，第一部分是仅仅与状态S有关，与具体要采用的动作A无关，这部分我们叫做价值函数部分，记做$V(S,w,α)$,第二部分同时与状态状态S和动作A有关，这部分叫做优势函数部分,记为$A(S,A,w,β)$,那么最终我们的价值函数可以重新表示为
@@ -89,6 +89,8 @@ $$Q(S,A,w,α,β)=V(S,w,α)+A(S,A,w,β)$$其中，w是公共部分的网络参数
 $$Q(s,a;θ,α,β)=V(s;θ,β)+(A(s,a;θ,α)-\frac{1}{|A|}\sum_{a'}A(s,a';θ,α))$$
 ![avatar](./imgs/dueling.png)
 
+## 缺点
+1. 不适合连续空间的actions
 
 ## paper分析
 用神经网络预测Q值  
