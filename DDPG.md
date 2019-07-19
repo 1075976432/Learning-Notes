@@ -21,4 +21,17 @@ actor target网络：$\mu(s|\theta^{\mu'})$
 $$Loss = \frac {1}{N} \sum^N_i [r_i+\gamma Q'(s_{i+1}, \mu'(s_{i+1}|\theta^{\mu'})| \theta^{Q'})-Q(s_i,a_i| \theta^Q)]^2$$
 对于actor：
 $$\nabla_{\theta^\mu J} \approx \frac {1}{N} \sum^N_i \nabla_a Q(s, a|\theta^Q) \nabla_{\theta^\mu} \mu (s|\theta^\mu )$$
+##### 动作随机噪声
+* 为了平衡exploration和exploit，ddpg使用了Uhlenbeck-Ornstein随机过程（下面简称UO过程），作为引入的随机噪声
+* UO过程在时序上具备很好的相关性，可以使agent很好的探索具备动量属性的环境exploration的目的是探索潜在的更优策略，
+* 为action的决策机制引入随机噪声  
+$$action = \mu(s)+Noise$$
 
+##### Soft-update
+不同与DQN直接将训练网络与目标网络直接复制，DDPG使用了一种缓慢更新的方法，每次只复制一小部分。
+$$\theta = \tau \theta + (1-\tau)\theta'$$
+![avatar](imgs/ddpg.jpeg)
+##### 算法流程
+![avatar](imgs/DDPG-alg.png)
+
+[代码参考](https://github.com/udacity/deep-reinforcement-learning)
