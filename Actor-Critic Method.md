@@ -14,7 +14,7 @@
    根据下个state的估计值来计算value，其结果是biased， 但是low variant
 
 * N-step Bootstrapping
-计算n步长度的TD Error
+计算n步长度的TD estimat
 $$V(s_t)=r_{t+1}+\gamma r_{t+2}+\gamma^2 r_{t+2}+...+\gamma^n V(s_{t+n})=\sum_{i=0}^{n-1} \gamma^i r_{t+i}+\gamma^n V(s_{t+n})$$
 
     优点：减少bias，收敛更快，需要的样本少
@@ -22,10 +22,14 @@ $$V(s_t)=r_{t+1}+\gamma r_{t+2}+\gamma^2 r_{t+2}+...+\gamma^n V(s_{t+n})=\sum_{i
 
 * GAE: Generalized Advantage Estimation
 当前t时刻的expected return是基于所有n-step boostrapping (t到Ternimate)，加权求和。
-$$V(s_t) = \sum_i^T (1-\gamma) \gamma^i G_t^{i-step-return}$$
-当$\gamma=1$时，相当与Monte-Carlo estimate，需要遍历一个episode;
-当$\gamma=0$时，相当与1 step TD error
-一般$\gamma$取值在0.9-1  
+$$A(s_t) = \sum_i^T (1-\gamma) \gamma^i G_t^{i-step-return}=-V(s_t)+r_t+\gamma r_{t+1}+...+\gamma^{T-t+1}r_{T-1}+\gamma^{T-t}V(s_T)$$ 
+**Truncated version**(used in code)
+$$A(s_t)=\delta_t+(\gamma \lambda)\delta_{t+1}+...+(\gamma \lambda)^{T-t+1}\delta_{T-1}$$
+$$where \delta = r_t+\gamma V(s_{t+1})-V(s_t)$$
+
+    当$\gamma=1$时，同原始公式，相当与Monte-Carlo estimate，需要遍历一个episode;
+    当$\gamma=0$时，相当与1 step TD error
+    一般$\gamma$取值在0.9-1  
 
 ![avatar](./imgs/gea.png)
 

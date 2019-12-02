@@ -133,3 +133,40 @@ $$L_{sur}(\theta', \theta)=\sum_t \frac{\nabla_{\theta'}\pi_{\theta'}(a_t|s_t)}{
 3. Update $\theta'$using gradient ascent$\theta' \leftarrow \theta' + \alpha \nabla_{\theta'} L_{sur}^{clip}(\theta', \theta)$
 4. Then we repeat step 2-3 without generating new trajectories. Typically, step 2-3 are only repeated a few times
 5. Set $\theta = \theta'$, go back to step 1, repeat.
+
+##### 临时补充，待优化整理
+- 网络模型
+一个网络主体，在输出端有两个ｆｃ网络，分别输出action概率 $Ｐ(A|S)$和state value $V(S)$
+根据action概率采样动作
+1.计算ａｃｔｉｏｎ概率分布distribution
+2.计算$logP(a|s)$
+3.计算信息熵　entropy $$
+```python
+obs = tensor(obs)
+phi = self.phi_body(obs)
+phi_a = self.actor_body(phi)
+phi_v = self.critic_body(phi)
+# probility of actions
+logits = self.fc_action(phi_a)
+v = self.fc_critic(phi_v)
+# the distribution of actions
+dist = torch.distributions.Categorical(logits=logits)
+if action is None:
+    action = dist.sample()
+# log P(a|s)
+log_prob = dist.log_prob(action).unsqueeze(-1)
+entropy = dist.entropy().unsqueeze(-1)
+return {'a': action,
+        'log_pi_a': log_prob,
+        'ent': entropy,
+        'v': v}
+```
+- 使用truncated version of gae
+- 使用entropy
+Those familiar with the RL literature however will know that this is not the entire story. In addition to encouraging a policy to converge toward a set of probabilities over actions which lead to a high long-term reward, it is also typical to add what is sometimes called an “entropy bonus” to the loss function. **This bonus encourages the agent to take actions more unpredictably, rather than less so**.
+$$J(\theta) = L_{sur}(\theta', \theta) + \beta H(\pi(s))$$
+[文章参考](https://medium.com/@awjuliani/maximum-entropy-policies-in-reinforcement-learning-everyday-life-f5a1cc18d32d)
+[文章参考](https://medium.com/aureliantactics/understanding-ppo-plots-in-tensorboard-cbc3199b9ba2)
+
+
+
