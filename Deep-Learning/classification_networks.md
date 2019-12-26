@@ -144,18 +144,164 @@ The top image is the stem of Inception-ResNet v1. The bottom image is the stem o
 - 新的pooling层, specialized “Reduction Blocks” ，防止信息丢失
 ![alt](imgs/gv5.png)
 利用了两个并行的结构完成size reduction，分别是conv和pool，上图的右半部分。左半部分是右半部分的内部结构  
-
+![alt](imgs/gv6.png) 
 #### 6.5 Inception-ResNet v1
+inception-resnet v1网络主要被用来与inception v3模型性能进行比较。因此它所用的inception子网络的计算相对常规inception模块有所减少，这是为了保证使得它的整体计算/内存开销与inception v3近似，如此才能保证比较的公平性
+![alt](imgs/gv8.jpeg)   
+
+#### 6.6 Inception-ResNet v2
+相对于inception-resnet v1而言，v2主要被设计来探索residual learning用于inception网络时所极尽可能带来的性能提升。因此它所用的inception 子网络并没有像v1中用的那样偷工减料。
+![alt](imgs/gv8.JPG)  
 
 
+## 7. ResNet
+![alt](imgs/res2.png)
+解决问题：
+- 增加深度带来的首个问题就是梯度爆炸/消散的问题，这是由于随着层数的增多，在网络中反向传播的梯度会随着连乘变得不稳定，变得特别大或者特别小。这其中经常出现的是梯度消散的问题。
+- 为了克服梯度消散也想出了许多的解决办法，如使用BatchNorm，将激活函数换为ReLu，使用Xaiver初始化等，可以说梯度消散已经得到了很好的解决
+- Degradation of deep network，即随着深度的增加，网络的性能会越来越差，直接体现为在训练集上的准确率会下降,不是overfitting
 
+#### Residual Module
+![alt](imgs/res1.png)
+上图左为basic形式，右为bottleneck的形式(减少计算)。 
 
+思想：
+1. 直接对网络进行简单的堆叠到特别长，网络内部的特征在其中某一层已经达到了最佳的情况，这时候剩下层应该不对改特征做任何改变，自动学成恒等映射(identity mapping) 的形式。也就是说，相对于浅层网络更深的网络至少不会有更差的效果，但是因为网络degradation的问题，这并不成立。
+2. 退而求其次，已知有网络degradation的情况下，不求加深度能提高准确性，能不能至少让深度网络实现和浅层网络一样的性能，即让深度网络后面的层至少实现恒等映射的作用，根据这个想法，作者提出了residual模块来帮助网络实现恒等映射。　
 
+作用：
+- F(x)=H(x)−x，x为浅层的输出，H(x)为深层的输出,当浅层的x代表的特征已经足够成熟，如果任何对于特征x的改变都会让loss变大的话，F(x)会自动趋向于学习成为0，x则从恒等映射的路径继续传递.在前向过程中，当浅层的输出已经足够成熟（optimal），让深层网络后面的层能够实现恒等映射的作用。
 
+- 因此redidual模块会明显减小模块中参数的值从而让网络中的参数对反向传导的损失值有更敏感的响应能力，虽然根本上没有解决回传的损失小得问题，但是却让参数减小，相对而言增加了回传损失的效果，也产生了一定的正则化作用.[参考](https://blog.csdn.net/weixin_43624538/article/details/85049699).
+- 因为前向过程中有恒等映射的支路存在，因此在反向传播过程中梯度的传导也多了更简便的路径
 
+使用：
+当进行add操作时，需要对应的depth进行相加，有可能深度不相同，这时候有两种identity mapping的方式：
+一种即简单地将X相对Y缺失的通道直接补零从而使其能够相同
+另一种则是通过使用1x1卷积
 
+#### residual module改进
+$$y_l=h(x_l)+F(x_l,W_l)$$
+
+$$x_{l+1}=f(y_l)$$
+
+为了整个网络信息的传播构造一个流畅的通道，如果：
+$$h(x_l)=x_l$$
+
+$$x_{l+1}=y$$
+
+则有：
+$$x_L=x_l+\sum_{i=l}^{L-1} F(x_i,W_i)$$
+
+改进后网络的反向传播公式如下：
+$$\frac{\partial l}{\partial x_l}=\frac{\partial l}{\partial x_L}\frac{\partial L}{\partial x_l}=\frac{\partial l}{\partial x_L}(1+\frac{\partial l}{\partial x_l}\sum_{i=l}^{L-1} F(x_i,W_i))$$
+
+对于任何一层的x的梯度由两部分组成，其中一部分直接就由L层不加任何衰减和改变的直接传导l层，这保证了梯度传播的有效性,另一部分也由链式法则的累乘变为了累加，这样有更好的稳定性.
+以上优秀的特点只有在假设成立时才有效，所以ResNet要尽量保证两点：
+1）不轻易改变”identity“分支的值，也就是输入与输出一致；
+2）addition之后不再接改变信息分布的层.  
+#### 残差模块的几种可能的设置
+![alt](imgs/res3.png)
+图１是ｒｅｓｎｅｔ原始结构，图２和图１都改变了identity map的值，为了去掉relu，有以下几种做法：
+- 把relu放回参数层F中，如上图３，但这样会让F中拟合的对于x的残差只有正值，会大大减小残差的表示性。
+- 文章提出了一种叫pre-activation的方式，即把BN和relu放在卷积的前面，这样就可以保证F中所有的操作都在和x相加之前完成，并且不会对残差产生限制，上图中的(e)。实际上把激活层（relu+BN）放在卷积的前面的操作在VGG等网络中不会产生不同的影响，但是在残差网络中就可以保证输入和输出加和之后在输入下一层之前没有别的操作，让整个信息的前向后向流动没有任何阻碍，从而让模型的优化更加简单和方便。
+- 对于(d)这种只把relu提前的操作也会产生问题，当F中经过最后一个BN后，还要经过一个和x相加的运算，本来BN就是为了给数据一个固定的分布，一旦经过别的操作就会改变数据的分布，会削减BN的作用。在原版本的resnet中就是这么使用的BN，所以这种pre-activation的方式也增加了残差模块的正则化作用
+- 通常把图5的结构称作**ResNet V2**  
+
+### 7.1 ResneXt
+![alt](imgs/res4.png)
+网络性能提升的关键在于残差模块，而不是shortcut，ResNeXt基于wide residual和inception，提出了另一个方向，即将残差模块中的所有通道分组进行汇合操作会有更好的效果。
+
+因为每个分支的**相同结构**，提出除了深度和宽度之外的第三维度**cardinality**，即分支的数量,是一个比深度和宽度更加有效的维度（上图右侧cardinality为３２）
+![alt](imgs/res5.png)
+上图为三种相同的形式
+
+### 7.2 Deep Network with Stochastic depth
+背景：
+1. 更深层的网络通常需要进行数周的训练——因此，把它应用在实际场景下的成本非常高
+2. 在训练过程中，随机去掉很多层，并没有影响算法的收敛性，说明了ResNet具有很好的冗余性。而且去掉中间几层对最终的结果也没什么影响，说明ResNet每一层学习的特征信息都非常少，也说明了ResNet具有很好的冗余
+
+思想：
+1. 在训练的过程中，每一个层都有一个“生存概率”，并且都会被任意丢弃。在测试过程中，所有的block都将保持被激活状态，而且block都将根据其在训练中的生存概率进行调整
+2. 在训练中，如果一个特定的残差块被启用了，那么它的输入就会同时流经恒等转换（identity shortcut）和权重层；否则输入就只会流经恒等变换shortcut
+3. 使用一个“线性衰减规律”应用于每一层的生存概率。由于较早的层会提取低级特征，而这些低级特征会被后面的层所利用，所以这些层不应该频繁地被丢弃
+![alt](imgs/res6.png)
+
+优点：
+1、这种方法成功地解决了深度网络的训练时间难题。
+
+2、它大大减少了训练时间，并显着改善了几乎所有数据集的测试错误（CIFAR-10，CIFAR-100，SVHN）
+
+3、可以使得网络更深
+
+## 8. DenseNet
+![alt](imgs/dens1.png)
+使用了dense block，在其中，对于每一层，使用前面所有层的特征映射作为输入，并且使用其自身的特征映射作为所有后续层的输入。
+
+优点: 缓解了消失梯度问题，加强了特征传播，鼓励特征重用，并大大减少了参数的数量
+
+#### 8.1 Dense connections
+每个层从前面的所有层获得额外的输入，并将自己的特征映射传递到后续的所有层。使用concatenation拼接输入(在resnet中使用add操作)
+
+- 使collective knowledge(网络学习到的特征)可以复用
+- 网络无需更多冗余的特征图，可以减少层数，减少参数，加快训练
+- 隐性深度监督Implicit Deep Supervision.使每一层可以直接访问ｌｏｓｓ梯度和原始输入，更好的使梯度传递。网络顶部的单个分类器通过最多两个或三个过渡层对所有层提供直接监控。然而，由于所有层之间共享相同的损耗函数，因此DenseNets的损耗函数和梯度基本上不那么复杂
+![alt](imgs/dens2.png)
+![alt](imgs/dens1.gif)
+
+#### 8.2 Composite function
+![alt](imgs/dens3.png)
+文章中，定义了一种组合的函数,
+以下所有的conv表示为：
+BatchNorm→ReLU→Conv*
+
+#### 8.3 Dense block
+![alt](imgs/dens4.png)
+每个block由多个dense layer组成，之间使用稠密连接（使用前面所有层的特征映射作为输入，并且使用其自身的特征映射作为所有后续层的输入）。
+
+在block中，所有的feature map的大小不变
+
+#### 8.4 Dense layer
+原始的，每个dense layer由一部分组成：
+- 3 X 3 CONV
+
+**Bottleneck layers**
+虽然每一层只产生k个输出特征映射，但它通常具有更多的输入，为了减少dense layer输出的深度,并将具有瓶颈层的网络称为**DenseNet-B**
+- １ X １ CONV（输出深度为4k)
+- 3 X 3 CONV
+![alt](imgs/dens9.png)
+
+输出的depth为定值，等于**growth rate k**
+![alt](imgs/dens.png)
+
+#### 8.5 Growth rate (k)
+每个dense layer输出的深度
+
+按顺序，对于每一个layer,其输入深度都会增加k个
+![alt](imgs/dens6.png)
+
+一个较小的k值，就可以得到好的表现。对此的一种解释是每个层可以访问其块中的所有前面的特征映射，因此可以访问网络的“集体知识”。人们可以将特征映射看作网络的全局状态。每个层将自己的 k 个特征映射添加到这个状态。增长速度控制着每一层新信息对全局状态的贡献。全局状态一旦写入，就可以从网络内的任何地方访问，并且与传统网络体系结构不同，不需要逐层复制它
+
+#### 8.6 Transition layer
+在dense block之间的层。两部分组成：
+- 1 X 1 CONV　（降维）
+- ２ X ２ AVG POOL　（downsampling）
+![alt](imgs/dens7.png)
+![alt](imgs/dens8.png)
+
+**Compression**
+为了进一步提高模型的紧凑性，可以通过过渡层减少特征映射的数量。如果一个dense block包含 m 个特征映射，可以让紧跟着的变化层生成 ⌊θm⌋个输出特征映射， 0<θ≤1作为压缩因子。当 θ<1 时，网络称为**DenseNet-C**
+
+[代码参考](https://towardsdatascience.com/paper-review-densenet-densely-connected-convolutional-networks-acf9065dfefb)
 
 
 # 其他
 [网络模型结构可视化网站](https://dgschwend.github.io/netscope/quickstart.html)
+
+其他网络：
+Highway Networks
+Fractal Nets
+Deeply Supervised Network
+Ladder Networks
+Deeply-Fused Nets
 
