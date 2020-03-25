@@ -45,3 +45,4 @@ $d_xd_y＝sigmoid()$,输出范围在０－１对应anchor长宽的百分比
 $pw$时anchor的长度（在feature map下的长度）
 ![alt](imgs/bbr.png)   
 ![alt](imgs/bbr2.png)  
+![alt](imgs/yolo6.png)  
