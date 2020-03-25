@@ -38,8 +38,10 @@ $$Loss = \sum_i^N (t_i^* - w^T\phi(P^i))^2 + \lambda ||w||^2$$
 
 
 ### 方法－－anchor系列/ＹＯＬＯv3　
-物体中心落在一个ｇｒｉｄ上时：
+1. anchor表示：原始图像下的长，宽
+2. 物体中心落在一个ｇｒｉｄ上时：
 中心点＝对应feature map上的grid的左上角坐标　＋偏移百分比(0-1)
-$d_xd_y＝sigmoid()$,输出范围在０－１对应anchor长宽的百分比
+$d_xd_y＝sigmoid()$,输出范围在０－１对应anchor长宽的百分比  
+$pw$时anchor的长度（在feature map下的长度）
 ![alt](imgs/bbr.png)   
 ![alt](imgs/bbr2.png)  
