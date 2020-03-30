@@ -213,5 +213,3 @@ Faster R-CNN的训练，是在已经训练好的model的基础上继续进行训
 6. 第二次训练Fast RCNN网络
 训练过程类似于一种“迭代”的过程，只循环了2次。原因是循环更多次没
 ![alt](imgs/faster5.jpg)
-
-## 5. Feature Pyramid Networks
