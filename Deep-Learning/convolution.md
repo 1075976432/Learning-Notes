@@ -155,5 +155,43 @@ shuffleNet论文认为，1 x 1卷积的计算成本也很高。它建议将组�
 在ShuffleNet论文中，作者使用了我们学到的三种类型的卷积：（1）混洗分组卷积; （2）逐点分组卷积; （3）深度可分离卷积。这种架构设计显着降低了计算成本，同时保持了准确性。
 
 # <span id="jump2">卷积运算</span>
-## 1. 
+## 1. convolution
+$i:input\ size$
+$k: kernel\ size$
+$s: stride $
+$o: output \ size$
+$p: padding \ size$
+$$o=\lfloor \frac{i+2p-k}{s}\rfloor +1$$
+half padding: 输入输出大小不变
+$$p=\lfloor \frac{k}{2}; \rfloor \ s=1; \ k \ is \ odd$$
 
+## 2. tanspose convolution
+一种看法：transpose conv可以表示为其输入为某个convolution的输出。
+2.1 no padding, unit stride
+![alt](imgs/deconv1.png)
+![alt](imgs/deconv2.png)
+2.2 zero padding, unit stride
+![alt](imgs/deconv3.png)
+![alt](imgs/deconv4.png)
+
+2.3 half padding, unit stride
+![alt](imgs/deconv5.png)
+![alt](imgs/deconv6.png)
+总结：
+$$o'=i'+(k-1)-2p$$
+2.4 no padding, no unit stride
+**逆向来看，stride>1,所以deconvolution的stride<1，这也是为什么叫fractionally strided convolution**
+![alt](imgs/deconv7.png)
+![alt](imgs/deconv8.png)
+2.5 zero padding， non unit stride
+![alt](imgs/deconv9.png)
+![alt](imgs/deconv10.png)
+新增a，来解除上述的限制
+![alt](imgs/deconv11.png)
+![alt](imgs/deconv12.png)
+
+## 3. dilated convolution
+d: dilated rate
+kernel size:$\hat{k}=k+(k-1)(d-1)$
+计算方法同之前相同，k替换为$\hat{k}$
+$$o=\lfloor \frac{i+2p-k-(k-1)(d-1)}{s}\rfloor +1$$
