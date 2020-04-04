@@ -191,6 +191,7 @@ RPN网络实际分为2条线，上面一条通过softmax分类anchors获得posit
 - 假设在conv5 feature map中每个点上有k个anchor（默认k=9），而每个anhcor要分positive和negative，所以每个点由256d feature转化为cls=2k scores；而每个anchor都有(x, y, w, h)对应4个偏移量，所以reg=4k coordinates
 - 全部anchors拿去训练太多了，训练程序会在合适的anchors中随机选取128个postive anchors+128个negative anchors进行训练
 ![alt](imgs/faster4.jpg)
+- 对于每个anchor，用了softmax layer的方式，会或得两个置信度。一个置信度是前景，一个置信度是背景
 训练loss方程不变，区别是类别只有两个
 
 ### 4.3 Proposal Layer
