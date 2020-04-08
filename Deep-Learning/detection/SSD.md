@@ -62,7 +62,7 @@ $f_k=特征图大小$
 ![alt](imgs/ssd7.jpg)
 ![alt](imgs/ssd8.jpg)
 ![alt](imgs/ssd9.jpg)
-权重系数 [公式] 通过交叉验证设置为1。$x_{ij}^k \in {1,0}$为一个指示参数，当$x_{ij}^k=1$时表示第i个先验框与第j个ground truth匹配，并且ground truth的类别为p. c为类别置信度预测值,其中第一个代表背景的概率。
+权重系数通过交叉验证设置为1。$x_{ij}^p \in {1,0}$为一个指示参数，当$x_{ij}^k=1$时表示第i个先验框与第j个ground truth匹配，并且ground truth的类别为p. c为类别置信度预测值,其中第一个代表背景的概率。
 ### 3.数据增强
 - 使用原图
 - 采样图片小块(patch),使其与目标的IOU为0.1,0.3，0.5，0.7，0。9
