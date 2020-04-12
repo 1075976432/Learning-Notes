@@ -119,6 +119,7 @@ $$\theta_{t+1}=\theta_t-\frac{\eta}{\sqrt{\hat v_t} + \varepsilon}\hat m_t$$
 
 - 集合了adagrad和RMSprop的优点
 
+![alt](imgs/adam.png)
 ### 5. Nadam- Nesterov-accelerated Adaptive Moment Estimation
 将Nesterov momentum加入到Adam当中，即利用当前的Nesterov动量向量来代替Adam中的传统动量向量
 一般而言，在想使用带动量的RMSprop，或者Adam的地方，大多可以使用Nadam取得更好的效果。 
