@@ -35,3 +35,9 @@ the value of any state can be calculated as the sum of the **expected immediate 
 7. 最优*: 最优策略 $\pi_*$ 最优状态值方程 $v_*$ 最优动作值方程$q_*$      
              $$v_{\pi_*}(s) \geq v_\pi(s) \qquad \forall s\in S$$
 当确定了$q_*$时，则 $$\pi_*(s) = argmax_{a\in A(s)} q_*(s,a)$$  
+
+## 其他重点
+1. on policy and off policy
+当前更新的策略是不是采样所用的策略；整体上来说，基于experience replay的算法，都是off policy
+off policy: Q-learning采样的策略是有一定概率随机，有一定概率选最大收益的(greedy),而他更新策略时，采用（$s_t,a_t,r_{t+1},s_{t+1}），其计算下一个状态下的action采用了greedy，所以它的策略时greedy policy，但其实生成样本的策略不是，两者不相同；
+on policy:相对于sarsa，其更新策略时，使用了（$s_t,a_t,r_{t+1},s_{t+1},a_{t+1}$）,所有的样本都是在当前策略下生成，所以其更新假设当前策略然在使用；
