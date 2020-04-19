@@ -195,8 +195,8 @@ RPN网络实际分为2条线，上面一条通过softmax分类anchors获得posit
 训练loss方程不变，区别是类别只有两个
 
 ### 4.3 Proposal Layer
-Proposal Layer按照以下顺序依次处理：
-- 生成anchors，利用对所有的anchors做bbox regression回归（这里的anchors生成和训练时完全一致）
+在使用的时候，Proposal Layer按照以下顺序依次处理：
+- 生成anchors，利用对所有的anchors做bbox regression回归（这里的anchors生成和训练时完全一致，因为已经训练好了，进行回归矫正）
 - 按照输入的positive softmax scores由大到小排序anchors，提取前pre_nms_topN(e.g. 6000)个anchors，即提取修正位置后的positive anchors
 - 限定超出图像边界的positive anchors为图像边界，防止后续roi pooling时proposal超出图像边界
 - 剔除尺寸非常小的positive anchors
@@ -205,12 +205,35 @@ Proposal Layer按照以下顺序依次处理：
 - 输出proposal=[x1, y1, x2, y2]，注意，由于在第三步中将anchors**映射回原图**判断是否超出边界，所以这里输出的proposal是对应MxN输入图像尺度的，这点在后续网络中有用。
 
 ### 4.4 训练
+- 输入：resize 短边=600
+- RPN 训练
+RPN会产生大约2000个RoIs，这2000个RoIs不是都拿去训练，而是利选择256个RoIs用以训练。选择的规则如下：
+    - 如果anchor box与ground truth的IoU值最大，标记为正样本，label=1
+    - 如果anchor box与ground truth的IoU>0.7，标记为正样本，label=1
+    - 如果anchor box与ground truth的IoU<0.3，标记为负样本，label=0
+    - 剩下的既不是正样本也不是负样本，不用于最终训练，label=-1
+    - RoIs和gt_bboxes 的IoU大于0.5的，选择一些（比如32个）
+    - 选择 正负样本数量1:1
+    - 为了便于训练，对选择出的RoIs，还对他们的gt_roi_loc 进行标准化处理（减去均值除以标准差）
+    - 对于分类问题,直接利用交叉熵损失. 而对于位置的回归损失,一样采用Smooth_L1Loss, 只不过只对正样本计算损失.而且是只对正样本中的这个类别4个参数计算损失。（同yolo）
+- r cnn
+    - IOU>0.5 作为正； 0.1<IOU<0.5 作为负
+    - loss 计算相同，多了一个类别作为背景
+    - 匡回归不在背景上做
+    - 
+- 分步骤训练
 Faster R-CNN的训练，是在已经训练好的model的基础上继续进行训练。实际中训练过程分为6个步骤：
-1. 在已经训练好的model上，训练RPN网络
-2. 利用步骤1中训练好的RPN网络
-3. 第一次训练Fast RCNN网络
-4. 第二训练RPN网络
-5. 再次利用步骤4中训练好的RPN网络，收集proposals
-6. 第二次训练Fast RCNN网络
-训练过程类似于一种“迭代”的过程，只循环了2次。原因是循环更多次没
-![alt](imgs/faster5.jpg)
+    1. 在已经训练好的model上，训练RPN网络，fine tune网络，所有权重都训练（包括特征提取部分）
+    2. 利用步骤1中训练好的RPN网络,用其生成proposal作为fast rcnn的输入，训练fast rcnn，所有权重都训练
+    4. 第二训练RPN网络，特征提取部分的网络用上一步的权重，初始化RPN，再次训练，特征层权重冻结
+    5. 再次利用步骤4中训练好的RPN网络，收集proposals，训练fast rcnn，特征层冻结
+    6. 重复
+    训练过程类似于一种“迭代”的过程，只循环了2次。原因是循环更多次没
+![alt](imgs/faster5.jpg)  
+
+- 联合训练（end to end）
+端到端的训练，网络有四个losses，对应RPN and RCNN;loss之间有权重系数
+
+
+## reference
+[paper](https://arxiv.org/pdf/1506.01497.pdf)
