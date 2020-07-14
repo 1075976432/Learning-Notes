@@ -73,3 +73,6 @@ total_loss = loss_x + loss_y + loss_w + loss_h + loss_conf + loss_cls
 [yolo1](https://arxiv.org/pdf/1506.02640.pdf)
 [yolo2](https://arxiv.org/pdf/1612.08242.pdf)
 [yolo3](https://pjreddie.com/media/files/papers/YOLOv3.pdf)
+
+# yolo-v4
+
